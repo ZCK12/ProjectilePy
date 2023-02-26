@@ -265,13 +265,13 @@ class ProjectileSimulator:
 
         Returns
         -------
-        impact : list
+        impact : tuple
             The distance-height coordinate pair for the impact at the specified height.
         """
         matches = [pos for pos in self.positionValues if pos[1] >= surface_height]
         if descending_impact is True:
-            return matches[-1]
-        return matches[0]
+            return tuple(matches[-1])
+        return tuple(matches[0])
 
     def final_position(self):
         """Returns the final position of the projectile. This is the position of the projectile after passing the
@@ -279,10 +279,10 @@ class ProjectileSimulator:
 
         Returns
         -------
-        position : list
+        position : tuple
             The distance-height coordinate pair of the final projectile position as a list.
         """
-        return self.positionValues[-1]
+        return tuple(self.positionValues[-1])
 
     def max_height(self):
         """Finds the maximum height achieved by the projectile in the last simulation.
