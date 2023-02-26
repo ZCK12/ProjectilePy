@@ -2,9 +2,9 @@ import math
 
 
 class ProjectileSimulator:
-    def __init__(self, initial_velocity=None, initial_height=0, initial_angle=0, gravity=9.981, time_step=0.01,
+    def __init__(self, initial_velocity, initial_angle, initial_height=0, time_step=0.0005, gravity=9.981,
                  drag="None", ):
-        assert drag in ["None", "Stokes", "Newtonian"]
+        assert drag in ["None", "Stokes", "Newtonian"], "Drag type not recognised"
         self.drag = drag
         self.initial_angle = initial_angle
         self.initial_height = initial_height
@@ -15,39 +15,101 @@ class ProjectileSimulator:
         self.positionValues = []
         self.velocityValues = []
 
-    def run(self, stop_height=0, override_drag=None):
-        drag = self.drag
+    def run(self, stop_height=0, override_drag=None, override_angle=None, override_velocity=None):
         if override_drag is not None:
-            assert override_drag in ["None", "Stokes", "Newtonian"]
+            assert override_drag in ["None", "Stokes", "Newtonian"], "Drag type not recognised"
             drag = override_drag
-
-        if drag is "None":
-            return self.__simulate_dragless(stop_height)
-        elif drag is "Stokes":
-            return self.__simulate_stokes(stop_height)
-        elif drag is "Newtonian":
-            return self.__simulate_newtonian(stop_height)
         else:
-            return
+            drag = self.drag
 
-    def __simulate_dragless(self, stop_height):
+        if override_angle is not None:
+            assert type(override_angle) == int or type(override_angle) == float, "Angle must be numerical"
+            assert -90 <= override_angle <= 90, "Angle must be between -90 and 90 degrees"
+            angle = override_angle
+        else:
+            angle = self.initial_angle
+
+        if override_velocity is not None:
+            assert type(override_velocity) == int or type(override_velocity) == float, "Velocity must be numerical"
+            assert override_velocity >= 0, "Initial velocity must be positive or zero"
+            velocity = override_velocity
+        else:
+            velocity = self.initial_velocity
+
+        if drag == "None":
+            self.positionValues, self.velocityValues = \
+                self.__simulate_dragless(angle, velocity, stop_height)
+        elif drag == "Stokes":
+            self.positionValues, self.velocityValues = \
+                self.__simulate_stokes(angle, velocity, stop_height)
+        elif drag == "Newtonian":
+            self.positionValues, self.velocityValues = \
+                self.__simulate_newtonian(angle, velocity, stop_height)
+        else:
+            raise ValueError("Drag type not recognised")
+
+    def solve_angle(self, target_vec, lofted=False, max_error=0.1):
+        if lofted:
+            angle = 85
+        else:
+            angle = 5
+        deltaPhi = 0.05
+
+        for iterations in range(50):
+            try:
+                self.run(override_angle=angle)
+            except AssertionError:
+                return False
+            impact1 = self.surface_impact(target_vec[1])
+
+            try:
+                self.run(override_angle=angle + deltaPhi)
+            except AssertionError:
+                return False
+            impact2 = self.surface_impact(target_vec[1])
+
+            dx = (impact2[0] - impact1[0]) / deltaPhi
+            error = target_vec[0] - impact1[0]
+
+            angle += min(error / dx, 5)
+            deltaPhi = (error / target_vec[0]) + 0.01 # relative error
+
+            if error < max_error:
+                return angle
+            elif iterations > 15 and (error / target_vec[0]) >= 0.01:
+                return False
+
+        return False
+
+    def solve_velocity(self):
+        raise NotImplementedError
+
+    def solve_height(self):
+        raise NotImplementedError
+
+    def __simulate_dragless(self, angle, velocity, stop_height):
         positionVec = [0, 0]
-        velocityVec = [math.cos(self.initial_angle) * self.initial_velocity,
-                       math.sin(self.initial_angle) * self.initial_velocity]
-        self.positionValues = [[positionVec[0], positionVec[1]]]
-        self.velocityValues = [[velocityVec[0], velocityVec[1]]]
+        velocityVec = [math.cos(math.radians(angle)) * velocity, math.sin(math.radians(angle)) * velocity]
 
-        while positionVec[1] >= stop_height:  # numerical integration (Euler method)
+        positionValues = [positionVec[:]]
+        velocityValues = [velocityVec[:]]
+
+        while True:  # numerical integration (Euler method)
             positionVec[0] += self.time_step * velocityVec[0]
             positionVec[1] += self.time_step * velocityVec[1]
             velocityVec[1] -= self.time_step * self.gravity
-            self.positionValues.append([positionVec[0], positionVec[1]])
-            self.velocityValues.append([velocityVec[0], velocityVec[1]])
+            positionValues.append(positionVec[:])
+            velocityValues.append(velocityVec[:])
 
-    def __simulate_newtonian(self, stop_height):
+            if positionValues[-1][1] < positionValues[-2][1] < stop_height:
+                break
+
+        return positionValues, velocityValues
+
+    def __simulate_newtonian(self, angle, velocity, stop_height):
         raise NotImplementedError
 
-    def __simulate_stokes(self, stop_height):
+    def __simulate_stokes(self, angle, velocity, stop_height):
         raise NotImplementedError
 
     def surface_impact(self, surface_height, descending_impact=True):
