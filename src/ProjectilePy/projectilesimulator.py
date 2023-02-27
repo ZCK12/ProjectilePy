@@ -44,6 +44,7 @@ class ProjectileSimulator:
                                                   [40000, 0.003996], [50000, 0.001027], [60000, 0.0003097],
                                                   [70000, 0.00008283], [80000, 0.00001846], [90000, 0]]
 
+        # Construct an air density lookup table with entries at multiples of 50 meters using linear interpolation
         self.default_earth_atmospheric_density = \
             self.__construct_linearised_dictionary(self.default_earth_atmospheric_density)
 
@@ -218,7 +219,7 @@ class ProjectileSimulator:
         """
         raise NotImplementedError
 
-    def run(self, stop_height=0, override_drag=None, override_angle=None, override_velocity=None):
+    def run(self, stop_height=0, override_drag=None, override_angle=None, override_velocity=None, override_density_profile=None):
         """Manages a numerical projectile motion simulation using the object parameters or method overrides.
         This replaces the stored simulation points from previous simulations with newly computed values.
 
@@ -253,6 +254,12 @@ class ProjectileSimulator:
         else:
             velocity = self.initial_velocity
 
+        if override_density_profile is not None:
+            assert type(override_velocity) == dict, "Density profile must be dictionary with keys as multiples of 50"
+            density_profile = override_density_profile
+        else:
+            density_profile = self.default_earth_atmospheric_density
+
         if drag == "None":
             self.positionValues, self.velocityValues = \
                 self.__simulate_dragless(angle, velocity, stop_height)
@@ -261,7 +268,8 @@ class ProjectileSimulator:
                 self.__simulate_stokes(angle, velocity, stop_height)
         elif drag == "Newtonian":
             self.positionValues, self.velocityValues = \
-                self.__simulate_newtonian(angle, velocity, stop_height, self.mass, self.drag_coefficient, self.cross_sectional_area, self.default_earth_atmospheric_density)
+                self.__simulate_newtonian(angle, velocity, stop_height, self.mass, self.drag_coefficient,
+                                          self.cross_sectional_area, density_profile)
         else:
             raise ValueError("Drag type not recognised")
 
