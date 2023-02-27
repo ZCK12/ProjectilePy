@@ -33,6 +33,63 @@ class ProjectileSimulator:
         self.positionValues = []
         self.velocityValues = []
 
+    def __simulate_dragless(self, angle, velocity, stop_height):
+        """Runs a single numerical simulation for a dragless projectile.
+
+        Parameters
+        ----------
+        angle : float
+            The initial angle of the fired projectile.
+        velocity : float
+            The initial velocity of the fired projectile.
+        stop_height : float
+            The height at which the simulation will halt during the descending phase.
+
+        Returns
+        -------
+        positionValues, velocityValues : list
+            Output lists of coordinate pairs for both position and velocity.
+        """
+        positionVec = [0, 0]
+        velocityVec = [math.cos(math.radians(angle)) * velocity, math.sin(math.radians(angle)) * velocity]
+
+        positionValues = [positionVec[:]]
+        velocityValues = [velocityVec[:]]
+
+        while True:  # numerical integration (Euler method)
+            positionVec[0] += self.time_step * velocityVec[0]
+            positionVec[1] += self.time_step * velocityVec[1]
+            velocityVec[1] -= self.time_step * self.gravity
+            positionValues.append(positionVec[:])
+            velocityValues.append(velocityVec[:])
+
+            if positionValues[-1][1] < positionValues[-2][1] < stop_height:
+                break
+
+        return positionValues, velocityValues
+
+    def __simulate_newtonian(self, angle, velocity, stop_height):
+        """Runs a single numerical simulation for a projectile as influenced by Newtonian drag.
+
+        Parameters
+        ----------
+        angle
+        velocity
+        stop_height
+        """
+        raise NotImplementedError
+
+    def __simulate_stokes(self, angle, velocity, stop_height):
+        """Runs a single numerical simulation for a projectile as influenced by Stokes drag.
+
+        Parameters
+        ----------
+        angle
+        velocity
+        stop_height
+        """
+        raise NotImplementedError
+
     def run(self, stop_height=0, override_drag=None, override_angle=None, override_velocity=None):
         """Manages a numerical projectile motion simulation using the object parameters or method overrides.
         This replaces the stored simulation points from previous simulations with newly computed values.
@@ -195,63 +252,6 @@ class ProjectileSimulator:
         matches = [pos for pos in self.positionValues if pos[0] <= target_vec[0]]
         return target_vec[1] - matches[-1][1]
 
-    def __simulate_dragless(self, angle, velocity, stop_height):
-        """Runs a single numerical simulation for a dragless projectile.
-
-        Parameters
-        ----------
-        angle : float
-            The initial angle of the fired projectile.
-        velocity : float
-            The initial velocity of the fired projectile.
-        stop_height : float
-            The height at which the simulation will halt during the descending phase.
-
-        Returns
-        -------
-        positionValues, velocityValues : list
-            Output lists of coordinate pairs for both position and velocity.
-        """
-        positionVec = [0, 0]
-        velocityVec = [math.cos(math.radians(angle)) * velocity, math.sin(math.radians(angle)) * velocity]
-
-        positionValues = [positionVec[:]]
-        velocityValues = [velocityVec[:]]
-
-        while True:  # numerical integration (Euler method)
-            positionVec[0] += self.time_step * velocityVec[0]
-            positionVec[1] += self.time_step * velocityVec[1]
-            velocityVec[1] -= self.time_step * self.gravity
-            positionValues.append(positionVec[:])
-            velocityValues.append(velocityVec[:])
-
-            if positionValues[-1][1] < positionValues[-2][1] < stop_height:
-                break
-
-        return positionValues, velocityValues
-
-    def __simulate_newtonian(self, angle, velocity, stop_height):
-        """Runs a single numerical simulation for a projectile as influenced by Newtonian drag.
-
-        Parameters
-        ----------
-        angle
-        velocity
-        stop_height
-        """
-        raise NotImplementedError
-
-    def __simulate_stokes(self, angle, velocity, stop_height):
-        """Runs a single numerical simulation for a projectile as influenced by Stokes drag.
-
-        Parameters
-        ----------
-        angle
-        velocity
-        stop_height
-        """
-        raise NotImplementedError
-
     def surface_impact(self, surface_height, descending_impact=True):
         """Finds the coordinates of the projectile when it passed through the given surface height.
         By default, this gives the impact in the descending portion of the simulation.
@@ -294,12 +294,26 @@ class ProjectileSimulator:
         """
         return max([pos[1] for pos in self.positionValues])
 
-    def time_of_flight(self):
+    def time_of_flight(self, surface_height=None, descending_impact=True):
         """Calculates the total time of flight for the projectile after reaching its final position.
+
+        Parameters
+        ----------
+        surface_height : float
+            The height of the surface to find time of flight to, or None for total time of flight.
+        descending_impact : bool
+            Should the method return the time for projectile impact on the descending trajectory.
 
         Returns
         -------
         time : float
-            The total time of flight for the projectile in seconds.
+            The time of flight for the projectile in seconds.
         """
-        return len(self.positionValues) * self.time_step
+        if surface_height is not None:
+            matches = [pos for pos in self.positionValues if pos[1] >= surface_height]
+            if descending_impact is True:
+                return self.positionValues.index(matches[-1]) * self.time_step
+            else:
+                return self.positionValues.index(matches[0]) * self.time_step
+        else:
+            return len(self.positionValues) * self.time_step
