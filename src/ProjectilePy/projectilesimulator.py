@@ -1,9 +1,10 @@
 import math
+import numpy as np
 
 
 class ProjectileSimulator:
     def __init__(self, initial_velocity, initial_angle, initial_height=0, time_step=0.0005, gravity=9.981,
-                 drag="None", ):
+                 drag="None", mass=None, drag_coefficient=None, cross_sectional_area=None):
         """A projectile simulation object with associated methods for simulating projectile motion and solving for
         various firing solutions. To start a simulation use the run method.
 
@@ -22,6 +23,7 @@ class ProjectileSimulator:
         drag : string
             The method for calculating drag in each projectile simulation.
         """
+
         assert drag in ["None", "Stokes", "Newtonian"], "Drag type not recognised"
         self.drag = drag
         self.initial_angle = initial_angle
@@ -30,8 +32,69 @@ class ProjectileSimulator:
         self.gravity = gravity
         self.time_step = time_step
 
+        self.cross_sectional_area = cross_sectional_area
+        self.drag_coefficient = drag_coefficient
+        self.mass = mass
+
+        # Credit to www.engineeringtoolbox.com for this data.
+        self.default_earth_atmospheric_density = [[-1000, 1.347], [0, 1.225], [1000, 1.112], [2000, 1.007],
+                                                  [3000, 0.9093], [4000, 0.8194], [5000, 0.7364], [6000, 0.6601],
+                                                  [7000, 0.5900], [8000, 0.5258], [9000, 0.4671], [10000, 0.4135],
+                                                  [15000, 0.1948], [20000, 0.08891], [25000, 0.04008], [30000, 0.01841],
+                                                  [40000, 0.003996], [50000, 0.001027], [60000, 0.0003097],
+                                                  [70000, 0.00008283], [80000, 0.00001846], [90000, 0]]
+
+        self.default_earth_atmospheric_density = \
+            self.__construct_linearised_dictionary(self.default_earth_atmospheric_density)
+
         self.positionValues = []
         self.velocityValues = []
+
+    def __construct_linearised_dictionary(self, input_list, interval=50):
+        x_list, y_list = zip(*input_list)
+        interpolated_x = range(input_list[0][0] + interval, input_list[-1][0], interval)
+        dictionary = {}
+
+        for x in interpolated_x:
+            dictionary[x] = self.__linear_interpolation(x, x_list, y_list)
+        return dictionary
+
+    def __linear_interpolation(self, x, x_data, y_data):
+        """Perform linear interpolation to estimate the value of y at a given value of x.
+
+        Parameters
+        ----------
+        x : float
+            The x value at which to estimate y.
+        x_data : array-like
+            A 1-D array of x values.
+        y_data : array-like
+            A 1-D array of y values corresponding to the x values.
+
+        Returns
+        -------
+        float
+            The estimated value of y at the given value of x.
+
+        Raises
+        ------
+        ValueError
+            If the input arrays do not have the same length or if the x value is out of range of the input data.
+        """
+        # Check that the input lists have the same length
+        if len(x_data) != len(y_data):
+            raise ValueError("The input lists must have the same length.")
+
+        # Find the indices of the two x values that bracket x
+        i = np.searchsorted(x_data, x) - 1
+        if i < 0 or i >= len(x_data) - 1:
+            raise ValueError("The x value is out of range of the input data.")
+        j = i + 1
+
+        # Perform linear interpolation
+        y = y_data[i] + ((y_data[j] - y_data[i]) / (x_data[j] - x_data[i])) * (x - x_data[i])
+
+        return y
 
     def __simulate_dragless(self, angle, velocity, stop_height):
         """Runs a single numerical simulation for a dragless projectile.
@@ -59,7 +122,11 @@ class ProjectileSimulator:
         while True:  # numerical integration (Euler method)
             positionVec[0] += self.time_step * velocityVec[0]
             positionVec[1] += self.time_step * velocityVec[1]
+
+            # Apply gravity
             velocityVec[1] -= self.time_step * self.gravity
+
+            # Record position and velocity
             positionValues.append(positionVec[:])
             velocityValues.append(velocityVec[:])
 
@@ -68,16 +135,77 @@ class ProjectileSimulator:
 
         return positionValues, velocityValues
 
-    def __simulate_newtonian(self, angle, velocity, stop_height):
+    def __simulate_newtonian(self, angle, velocity, stop_height, mass, drag_coefficient, cross_sectional_area,
+                             fluid_density_profile="Default"):
         """Runs a single numerical simulation for a projectile as influenced by Newtonian drag.
 
         Parameters
         ----------
-        angle
-        velocity
-        stop_height
+        angle : float
+            The initial angle of the fired projectile.
+        velocity : float
+            The initial velocity of the fired projectile.
+        stop_height : float
+            The height at which the simulation will halt during the descending phase.
+
+        Returns
+        -------
+        positionValues, velocityValues : list
+            Output lists of coordinate pairs for both position and velocity.
         """
-        raise NotImplementedError
+        assert mass is not None, "A mass must be specified for drag simulation"
+        assert type(mass)==float or type(mass)==int, "Mass must be Numerical"
+        assert mass >= 0, "A positive mass must be specified for drag simulation"
+
+        assert drag_coefficient is not None, "A drag coefficient must be specified for drag simulation"
+        assert type(drag_coefficient) == float or type(drag_coefficient) == int, "Drag coefficient must be Numerical"
+        assert drag_coefficient >= 0, "A positive drag coefficient must be specified for drag simulation"
+
+        assert cross_sectional_area is not None, "A cross-sectional area must be specified for drag simulation"
+        assert type(cross_sectional_area) == float or type(cross_sectional_area) == int, "Cross-sectional area must be Numerical"
+        assert cross_sectional_area >= 0, "A positive cross-sectional area must be specified for drag simulation"
+
+        if fluid_density_profile == "Default":
+            fluid_density_profile = self.default_earth_atmospheric_density
+
+        positionVec = [0, 0]
+        velocityVec = [math.cos(math.radians(angle)) * velocity, math.sin(math.radians(angle)) * velocity]
+
+        positionValues = [positionVec[:]]
+        velocityValues = [velocityVec[:]]
+
+        while True:  # numerical integration (Euler method)
+            positionVec[0] += self.time_step * velocityVec[0]
+            positionVec[1] += self.time_step * velocityVec[1]
+
+            # Calculate drag forces and velocity
+            phi = math.atan2(velocityVec[1], velocityVec[0])
+            vel = math.sqrt(velocityVec[0] ** 2 + velocityVec[1] ** 2)
+            try:
+                drag = self.__calculate_drag_force(vel, fluid_density_profile[(positionVec[1]//50)*50],
+                                                   drag_coefficient, cross_sectional_area)
+            except KeyError:
+                raise ValueError("The used fluid density profile does not contain needed values")
+            vel -= (drag/mass) * self.time_step
+
+            # Update velocity vector
+            velocityVec[0] = math.cos(phi)*vel
+            velocityVec[1] = math.sin(phi)*vel
+
+            # Apply gravity
+            velocityVec[1] -= self.time_step * self.gravity
+
+            # Record position and velocity
+            positionValues.append(positionVec[:])
+            velocityValues.append(velocityVec[:])
+
+            if positionValues[-1][1] < positionValues[-2][1] < stop_height:
+                break
+
+        return positionValues, velocityValues
+
+    def __calculate_drag_force(self, velocity, density, drag_coefficient, cross_sectional_area):
+        return 0.5 * density * velocity * velocity * drag_coefficient * cross_sectional_area
 
     def __simulate_stokes(self, angle, velocity, stop_height):
         """Runs a single numerical simulation for a projectile as influenced by Stokes drag.
@@ -133,7 +261,7 @@ class ProjectileSimulator:
                 self.__simulate_stokes(angle, velocity, stop_height)
         elif drag == "Newtonian":
             self.positionValues, self.velocityValues = \
-                self.__simulate_newtonian(angle, velocity, stop_height)
+                self.__simulate_newtonian(angle, velocity, stop_height, self.mass, self.drag_coefficient, self.cross_sectional_area, self.default_earth_atmospheric_density)
         else:
             raise ValueError("Drag type not recognised")
 
