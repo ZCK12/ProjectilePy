@@ -12,7 +12,7 @@ Currently the package is only availble from this repository.
 In the future it may be published to the PyPi for easier installation.
 
 ### Usage:
-####There are usage eamples in the src/examples folder, I encourage you to look through them for specific use cases.
+#### There are usage eamples in the src/examples folder, I encourage you to look through them for specific use cases.
 1. Create a new intance of the simulator class passing the approapriate arguments to the constructor.
 2. To run a straightforward simulation invoke the run() method on your simulator object.
 3. To examine the results, either invoke the analysis methods (such as final_position or time_of_flight), or directly access the positionValues list for the raw x-y coordiante pairs.
