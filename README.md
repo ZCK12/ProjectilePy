@@ -1,8 +1,6 @@
 # ProjectilePy
 A python library aimed at simulating and solving projectile motion problems. Includes various methods for running accurate numerical discrete-time simulations, both with and without drag. 
 
----
-
 ### Features:
 * Configurable drag or drag-less simulations for projectiles.
 * Real world atmospheric data for improved accuracy with Newtonian drag.
