@@ -22,3 +22,9 @@ You can install the package easily though pip by running the command `pip instal
     time_of_flight = mySimulator.time_of_flight()
     x, y = zip(*mySimulator.positionValues)
     ```
+4. If you have matplotlib installed, you can visualise the trajectory of your projectile using a plot.
+    ```
+    fig, ax = plt.subplots()
+    ax.plot(x, y)
+    plt.show()
+    ```
