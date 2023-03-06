@@ -1,5 +1,5 @@
 # from src.ProjectilePy import ProjectileSimulator
-from src.ProjectilePy.projectilesimulator import ProjectileSimulator
+from src.projectilepy.projectilesimulator import ProjectileSimulator
 import matplotlib.pyplot as plt
 import numpy as np
 

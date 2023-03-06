@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ProjectilePy"
+version = "0.0.5"
+description = "Simulate realistic projectile motion!"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {file = "LICENSE"}
+keywords = ["projectile", "ballistic", "simulation"]
+authors = [
+  { name="Zachary Collins-Kenner", email="zachary.ck12@gmail.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 3 - Alpha"
+]
+dependencies = [
+  "numpy",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ZCK12/ProjectilePy"
+"Bug Tracker" = "https://github.com/ZCK12/ProjectilePy/issues"

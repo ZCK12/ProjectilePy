@@ -2,7 +2,7 @@ import math
 import numpy as np
 
 
-class ProjectileSimulator:
+class model:
     def __init__(self, initial_velocity, initial_angle, initial_height=0, time_step=0.0005, gravity=9.981,
                  drag="None", mass=None, drag_coefficient=None, cross_sectional_area=None):
         """A projectile simulation object with associated methods for simulating projectile motion and solving for
