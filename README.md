@@ -17,6 +17,6 @@ You can install the package easily though pip by running the command `pip instal
 2. To run a straightforward simulation invoke the run() method on your simulator object.
     `mySimulator.run()`
 3. To examine the results, either invoke the analysis methods (such as final_position or time_of_flight), or directly access the positionValues list for the raw x-y coordiante pairs.
-    ```final_position = mySimulator.final_position()
+    final_position = mySimulator.final_position()
     time_of_flight = mySimulator.time_of_flight()
-    x, y = zip(*mySimulator.positionValues)```
+    x, y = zip(*mySimulator.positionValues)
