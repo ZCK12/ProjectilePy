@@ -13,9 +13,15 @@ You can install the package easily though pip by running the command `pip instal
 ## Usage:
 #### There are usage eamples in the src/examples folder, I encourage you to look through them for specific use cases.
 1. Create a new intance of the simulator class passing the approapriate arguments to the constructor eg.
-    `mySimulator = projectilepy.model(150,30)`
+    ```
+    import projectilepy
+    mySimulator = projectilepy.model(150,30)
+    ```
 2. To run a straightforward simulation invoke the run() method on your simulator object.
-    `mySimulator.run()`
+    ```
+    mySimulator.run()
+    mySimulator.run(override_angle=40, override_velocity=175) # Instance based overrides
+    ```
 3. To examine the results, either invoke the analysis methods (such as final_position or time_of_flight), or directly access the positionValues list for the raw x-y coordiante pairs.
     ```
     final_position = mySimulator.final_position()
