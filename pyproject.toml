@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ProjectilePy"
-version = "0.0.6"
+version = "0.1.1"
 description = "Simulate realistic projectile motion!"
 readme = "README.md"
 long_description_content_type="text/markdown"
@@ -17,7 +17,7 @@ authors = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Development Status :: 3 - Alpha"
+    "Development Status :: 4 - Beta"
 ]
 dependencies = [
   "numpy",
