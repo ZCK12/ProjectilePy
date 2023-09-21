@@ -379,9 +379,9 @@ class model:
             angle += min(error / dx, 5)
             deltaPhi = (error / target_vec[0]) + 0.01
 
-            if error < max_error:
+            if abs(error) < max_error:
                 return angle
-            elif iterations > 15 and (error / target_vec[0]) >= 0.01:
+            elif iterations > 25 and abs(error / target_vec[0]) >= 0.02:
                 return None
 
         return None
@@ -425,9 +425,9 @@ class model:
             velocity += min(error / dx, 20)
             deltaV = (error / target_vec[0]) + 0.05
 
-            if error < max_error:
+            if abs(error) < max_error:
                 return velocity
-            elif iterations > 15 and (error / target_vec[0]) >= 0.01:
+            elif iterations > 25 and abs(error / target_vec[0]) >= 0.02:
                 return False
 
         return False
