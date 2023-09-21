@@ -34,7 +34,7 @@ In your system shell, run the command `pip install ProjectilePy`
 4. Our pumpkin flew a total of 488 meters, not bad! If you have matplotlib installed, you can visualise the trajectory of the pumpkin using a scatterplot. But first we'll need to format our data a bit. Our simulation model stores positional data as a list of x-y tuples, but matplotlib works with seperate x and y lists. We can fix this with a quick zip command on our model's position values.
     ```
     import matplotlib.pyplot as plt
-    x, y = zip(*mySimulator.positionValues) #Formats the coordinate pairs into two seperate lists
+    x, y = zip(*mySimulator.positionValues) #Formats coordinate pairs into two lists
     fig, ax = plt.subplots()
     ax.plot(x, y)
     plt.show()
@@ -52,7 +52,9 @@ In your system shell, run the command `pip install ProjectilePy`
     ```
 7. We can once again check how far our pumpkin made it
     ```
-    print("With drag, our pumpkin flew a total of", mySimulator.final_position()[0], "meters!")
+    final_position = mySimulator.final_position()
+    distance = final_position[0]
+    print("With drag, our pumpkin flew a total of", distance, "meters!")
     ```
 8. Now our pumpkin only flew a total of 308 meters, drag is a killer. Let's have a look at the plot of our trajectory, it should look a little bit different now that the simulation is modelling drag.
     ```
