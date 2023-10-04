@@ -1,5 +1,7 @@
 # ProjectilePy
-A python library aimed at simulating and solving projectile motion problems. Includes various methods for running accurate numerical discrete-time simulations, both with and without drag. 
+Have you ever wondered how far you can throw a ball on the moon, or how much wind-resistance really affects a cannonball? This python library provides all the tools to answer those questions, and more.
+
+ProjectilePy is a library aimed at simulating and solving projectile motion problems. This library includes a class with a host of methods for simulating and analysing ballistic trajectories. Includes various methods for running accurate numerical discrete-time simulations, both with and without drag. 
 
 ## Features:
 * Configurable drag or drag-less simulations for projectiles.
